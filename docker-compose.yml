@@ -32,7 +32,7 @@ services:
       - POSTGRES_PASSWORD=sonarpg123
 
   sonar:
-    image: sonarqube:6.7-community
+    image: sonarqube:7.7-community
     depends_on:
       - db
     ports:
