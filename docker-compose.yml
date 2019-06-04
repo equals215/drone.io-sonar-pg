@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  drone:
+    image: drone/drone:1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - drone_data:/data
+    environment:
+      DRONE_GITHUB_SERVER: https://github.com
+      DRONE_GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      DRONE_GITHUB_CLIENT_SECRET: ${DRONE_GITHUB_CLIENT_SECRET:-}
+      DRONE_RUNNER_CAPACITY: 4
+      DRONE_SERVER_HOST: ${DRONE_SERVER_HOST:-}
+      DRONE_SERVER_PROTO: http
+      DRONE_TLS_AUTOCERT: "true"
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    container_name: drone
+
+  db:
+    image: postgres:11-alpine
+    networks:
+      - sonar-network
+    volumes:
+      - sonar_db:/var/lib/postgresql
+      - sonar_db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonarpg123
+
+  sonar:
+    image: sonarqube:6.7-community
+    depends_on:
+      - db
+    ports:
+      - "9000:9000"
+    networks:
+      - sonar-network
+    environment:
+      - sonar.jdbc.username=sonar
+      - sonar.jdbc.password=sonarpg123
+      - sonar.jdbc.url=jdbc:postgresql://db:5432/sonar
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
+networks:
+  sonar-network:
+    driver: bridge
+
+volumes:
+  drone_data:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonar_db:
+  sonar_db_data:
